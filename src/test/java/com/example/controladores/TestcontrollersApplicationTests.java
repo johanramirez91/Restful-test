@@ -92,4 +92,41 @@ class TestcontrollersApplicationTests {
 		}
 	}
 
+	@Test
+	@DisplayName("PUT /rest/widget/1")
+	void testUpdateNotFoundWidget() throws Exception {
+		Widget widget = new Widget("New widget", "This is a Widget");
+		Widget widgetById = new Widget(1L, "New widget", "This is a widget", 2);
+		Widget widgetSave = new Widget(1L, "New widget", "This is a widget", 3);
+		Mockito.doReturn(Optional.of(widgetById)).when(service).findById(1L);
+		Mockito.doReturn(widgetSave).when(service).save(Mockito.any());
+
+		mockMvc.perform(MockMvcRequestBuilders.put("/rest/widget/{id}", 21)
+				.contentType(MediaType.APPLICATION_JSON)
+				.header(HttpHeaders.IF_MATCH, 2)
+				.content(asJsonString((widget))))
+				.andExpect(MockMvcResultMatchers.status().isNotFound());
+	}
+
+	@Test
+	@DisplayName("GET /rest/widget/1 byId")
+	void testGetWidgetById() throws Exception{
+
+		Widget widgetById = new Widget(1L, "New Widget", "This is a Widget", 2);
+		Mockito.doReturn(Optional.of(widgetById)).when(service).findById(1L);
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/rest/widget/{id}", 1))
+				.andExpect(MockMvcResultMatchers.status().isOk())
+				.andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+
+				.andExpect(MockMvcResultMatchers.header().string(HttpHeaders.LOCATION, "/rest/widget/1"))
+				.andExpect(MockMvcResultMatchers.header().string(HttpHeaders.ETAG, "\"2\""))
+
+				.andExpect(MockMvcResultMatchers.jsonPath("$.id", CoreMatchers.is(1)))
+				.andExpect(MockMvcResultMatchers.jsonPath("$.name", CoreMatchers.is("New Widget")))
+				.andExpect(MockMvcResultMatchers.jsonPath("$.description", CoreMatchers.is("This is a Widget")))
+				.andExpect(MockMvcResultMatchers.jsonPath("$.version", CoreMatchers.is(2)));
+	}
+
+
 }
